@@ -17,11 +17,17 @@ APP_URL=http://localhost
 Конфигурируем БД:
 
 DB_CONNECTION=mysql
+
 DB_HOST=127.0.0.1
+
 DB_PORT=3306
+
 DB_DATABASE=homestead
+
 DB_USERNAME=
+
 DB_PASSWORD=
+
 
 ## Создаём структуру БД
 
@@ -31,3 +37,6 @@ php artisan migrate
 
 php artisan admin:create
 
+## По желанию заполняем БД тестовыми данными
+
+php artisan db:seed
