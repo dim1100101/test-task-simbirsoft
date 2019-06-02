@@ -9,6 +9,8 @@ use App\File;
 
 class FilesController extends Controller
 {
+    const DEFAULT_LIMIT_VALUE = 20;
+
     /**
      * Create a new controller instance.
      *
@@ -86,9 +88,110 @@ class FilesController extends Controller
      * @param string $hashFile
      * @return файл
      */
-    public function uploaded($hashUser, $hashFile) {
+    public function uploaded(string $hashUser, string $hashFile) {
         $fileName = File::where('hash', $hashFile)->first()->filename;
         $dir = 'files/' . substr($fileName, 0, 2) . '/';
+
+        // проверяем существует ли файл
+        if (!\Storage::exists($dir . $fileName)) {
+            return redirect()->back();
+        }
+
         return \Storage::download($dir . $fileName);
+    }
+
+    /**
+     *
+     * Возвращает JSON документ с записями о файлах
+     *
+     * @param Request $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function list(Request $request) {
+        $data = [];
+
+        $limit = $request->input('limit', self::DEFAULT_LIMIT_VALUE);
+        $offset = $request->input('offset', 0);
+
+        $files = File::take($limit)->skip($offset)->orderBy('id')->get();
+
+        if ($files->isEmpty()) {
+            response()->json([
+                'data' => [],
+            ]);
+        }
+
+        foreach ($files as $file) {
+            $fileRoute = route('uploadedFile', [
+                'hashUser' => $file->uploader->hash,
+                'hashFile' => $file->hash,
+            ]);
+            $data[$file->id] = [
+                'route' => $fileRoute,
+                'filename' => $file->filename,
+                'description' => $file->description,
+                'email' => $file->uploader->email,
+            ];
+        }
+
+        return response()->json([
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Удаляет файл из базы и хранилища
+     *
+     * @param int $id
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function delete(int $id) {
+        $file = File::find($id);
+
+        $fileName = $file->filename;
+        $dir = 'files/' . substr($fileName, 0, 2) . '/';
+
+        $status = 'ok';
+        $message = 'Файл ' . $fileName . ' успешно удалён';
+
+        // проверяем существует ли файл
+        if (!\Storage::exists($dir . $fileName)) {
+            $status = 'ok';
+            $message = 'Файл ' . $fileName . ' не найден в хранилище. Запись удалена из базы данных.';
+        } else {
+            \Storage::exists($dir . $fileName);
+        }
+
+        $file->delete();
+
+        return response()->json([
+            'status' => $status,
+            'message' => $message,
+        ]);
+    }
+
+    /**
+     *
+     * Апдейтит данные файла
+     *
+     * @param int $id
+     * @param Request $request
+     *
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(int $id, Request $request) {
+        $file = File::find($id);
+        $file->description = $request->input('description', '');
+        $file->save();
+
+        $status = 'ok';
+        $message = 'Информация файла ' . $file->filename . ' успешно обнавлена';
+
+        return response()->json([
+            'status' => $status,
+            'message' => $message,
+        ]);
     }
 }

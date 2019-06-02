@@ -24,3 +24,15 @@ Route::post('upload', [
 Route::get('uploaded/{hashUser}/{hashFile}', [
     'as' => 'uploadedFile', 'uses' => 'Api\FilesController@uploaded'
 ]);
+
+Route::get('files', [
+    'as' => 'filesList', 'uses' => 'Api\FilesController@list'
+]);
+
+Route::delete('files/{id}', [
+    'as' => 'deleteFile', 'uses' => 'Api\FilesController@delete'
+]);
+
+Route::patch('files/{id}', [
+    'as' => 'updateFile', 'uses' => 'Api\FilesController@update'
+]);
