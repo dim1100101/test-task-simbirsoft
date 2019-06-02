@@ -161,7 +161,7 @@ class FilesController extends Controller
             $status = 'ok';
             $message = 'Файл ' . $fileName . ' не найден в хранилище. Запись удалена из базы данных.';
         } else {
-            \Storage::exists($dir . $fileName);
+            \Storage::delete($dir . $fileName);
         }
 
         $file->delete();
